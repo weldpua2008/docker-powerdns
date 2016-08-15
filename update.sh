@@ -30,6 +30,13 @@ allReleaseInfo=$(curl -fsSL "https://downloads.powerdns.com/releases/")
 
 travisEnv=
 for version in "${versions[@]}"; do
+	minor=$(echo "$version"|cut -d '.' -f1|tr -d " ")
+	docker_file_prefix="$minor/$version"
+
+	if [ "x${minor}" = "x"  ]; then
+		echo "Can't detect minor version for $version"
+		continue
+	fi
 
 	for comp in tar.xz tar.bz2 tar.gz; do
 		filename=$(echo "$allReleaseInfo"|  grep -Eo 'pdns-'${version}.${comp}|uniq)
@@ -42,6 +49,10 @@ for version in "${versions[@]}"; do
 		echo "No such file for version: $version"
 		exit 126
 	fi
+
+	dockerfiles=()
+	mkdir -p "$docker_file_prefix"
+	{ generated_warning; cat Dockerfile-ubuntu.template; } > "$docker_file_prefix/Dockerfile"
 
 
 
