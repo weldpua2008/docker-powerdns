@@ -22,6 +22,9 @@ RUN set -xe && \
 	tar  jxf pdns.tar.bz2 --strip-components=1  -C $PDNS_BUILD_TMP && \
 	rm -f pdns.tar.bz2 && \
 	cd $PDNS_BUILD_TMP && \
+	echo "fixing 12.04 issue" &&\
+	alias g++="g++ --std=c++0x" && \
+	echo 'alias g++="g++ --std=c++0x"' >>  ~/.bashrc && \
 	./configure && \
 	make && \
 	make install && \
