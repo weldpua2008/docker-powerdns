@@ -23,9 +23,15 @@ RUN set -xe && \
 	rm -f pdns.tar.bz2 && \
 	cd $PDNS_BUILD_TMP && \
 	echo "fixing 12.04 issue" &&\
-	alias g++="g++ --std=c++0x" && \
-	echo 'alias g++="g++ --std=c++0x"' >>  ~/.bashrc && \
-	./configure && \
+	echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu precise main
+deb-src http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu precise main" > /etc/apt/sources.list.d/ubuntu-toolchain-r.list && \
+	gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv 1E9377A2BA9EF27F && \
+	apt-get update && \
+	apt-get -y --force-yes install gcc-4.7 g++-4.7 && \
+	update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.6 && \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.7 40 --slave /usr/bin/g++ g++ /usr/bin/g++-4.7 && \
+	update-alternatives --set gcc "/usr/bin/gcc-4.7" && \
+	CXX="g++-4.7" ./configure  && \
 	make && \
 	make install && \
 	cd / && \
