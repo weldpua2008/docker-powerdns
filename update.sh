@@ -168,7 +168,7 @@ function update_travis_ci()
 	pwd
 	newTravisEnv=
 	for dockerfile in "${_TRAVIS_DOCKERFILES[@]}"; do
-		set -x
+#		set -x
 		dir="${dockerfile%Dockerfile}"
 		dir="${dir%/}"
 		version=$(basename "$dir")

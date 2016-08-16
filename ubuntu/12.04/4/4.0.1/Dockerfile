@@ -14,9 +14,9 @@ RUN set -xe && \
 	apt-get update && \
 	export BUILD_SRC="$PDNS_FILENAME" && \
 	export BUILD_DEP="g++ libboost-all-dev libtool make pkg-config libmysqlclient-dev libssl-dev" && \
-	export UNINSTABLE_BUILD_TOOLS="wget bzip2" && \
+	export UNINSTABLE_BUILD_TOOLS="curl bzip2 ca-certificates" && \
 	apt-get install -y $BUILD_DEP  $UNINSTABLE_BUILD_TOOLS && \
-	wget $BUILD_SRC -O pdns.tar.bz2 && \
+	curl -fSL -o pdns.tar.bz2 "$BUILD_SRC" && \
 	export PDNS_BUILD_TMP="pdns-src" && \
 	mkdir -p $PDNS_BUILD_TMP && \
 	tar  jxf pdns.tar.bz2 --strip-components=1  -C $PDNS_BUILD_TMP && \
