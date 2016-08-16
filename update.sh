@@ -47,7 +47,6 @@ function generate_dockerfiles_for_distros()
 	local _distrofilename_from_tmpl=""
 	local _distroversionfilename_from_tmpl=""
 	minor=$(echo "$pdns_version"|cut -d '.' -f1|tr -d " ")
-
 	local count=0
 	while [ "x${_SUPPORT_PLATFORMS[count]}" != "x" ]
 
@@ -74,7 +73,7 @@ function generate_dockerfiles_for_distros()
 					mkdir -p "$_docker_file_prefix"
 					{ generated_warning; cat $_DOCKERFILE_TMPL; } > "$_docker_file_prefix/Dockerfile"
 					(
-					set -x
+#					set -x
 					sed -ri '
 						s!%%FROM%%!'"$_FROM_VAR"'!;
 						s!%%PDNS_VERSION%%!'"$pdns_version"'!;
@@ -91,7 +90,8 @@ function generate_dockerfiles_for_distros()
 # updates soft links to latest version and minor version
 function update_links()
 {
-
+	echo "===========> Updating links <================"
+#	set -x
 	local _rootpath="$PWD"
 	local count=0
 	while [ "x${_SUPPORT_PLATFORMS[count]}" != "x" ]
@@ -106,11 +106,51 @@ function update_links()
 	       		local __distro_wp="$_rootpath/$_distro/$_distro_version"
 	       		if [ -d "$__distro_wp" ];then
 					cd "$__distro_wp"
-					for fullversion in $(ls -D|grep -Eo '[0-9]{1,}.[0-9]{1,}.[0-9]{1,}');do
-						minor=$(echo "$fullversion"|cut -d '.' -f1|tr -d " ")
-						major=$(echo "$fullversion"|cut -d '.' -f2|tr -d " ")
-					done
+					for major in $(ls -D);do
+						cd $major || continue
+						local latest_alias="$major"
+#						for fullversion in $(ls -D|grep -Eo '^[0-9]{1,}.[0-9]{1,}.[0-9]{1,}$');do
+#							major=$(echo "$fullversion"|cut -d '.' -f1|tr -d " ")
+						for fullversion in $(ls -D|grep -Eo '^'$major'.[0-9]{1,}.[0-9]{1,}$');do
+							minor=$(echo "$fullversion"|cut -d '.' -f2|tr -d " ")
+							local __revision_alias="$fullversion"
+							if [ "x${major}" = "x" ] || [ "x${minor}" = "x" ] || [ "x${__revision_alias}" = "x" ];then
+								continue
+							fi
 
+							if [ -L "$major.$minor" ];then
+									rm -f "$major.$minor"
+							fi
+							if [ ! -d "$major.$minor" ] && [ ! -f "$major.$minor" ];then
+
+								# detect best minor+major alias
+								for curr_minor_major_revision in $(ls|grep -E '^'$major'.'$minor'.');do
+#									echo $curr_minor_major_revision
+									if [ $(version2dig $curr_minor_major_revision) -ge $(version2dig $latest_alias) ]; then
+										latest_alias="$curr_minor_major_revision"
+									fi
+
+									if [ $(version2dig $curr_minor_major_revision) -ge $(version2dig $__revision_alias) ]; then
+										__revision_alias="$curr_minor_major_revision"
+										if [ "x${__revision_alias}" = "x" ];then
+											continue
+										fi
+									fi
+								done
+
+
+								echo "Creating alias for $_distro/$_distro_version/$major/$major.$minor => $__revision_alias"
+								ln -s  "$__revision_alias" "$major.$minor"
+							fi
+
+						done
+#						echo "latest_alias $latest_alias"
+						if [ -d "$latest_alias" ];then
+							echo "Generating alias for $_distro/$_distro_version/$major/latest => $latest_alias"
+							rm -f "$_distro/$_distro_version/$major/latest" || true
+							ln -s "$latest_alias" latest
+						fi
+					done
 
 				fi
 	       done
@@ -123,7 +163,7 @@ function main()
 	#jsonSh="$(curl -fsSL 'https://raw.githubusercontent.com/dominictarr/JSON.sh/ed3f9dd285ebd4183934adb54ea5a2fda6b25a98/JSON.sh')"
 	allReleaseInfo=$(curl -fsSL "$_PDNS_RELEASES_URL/")
 	#allVersions=$(echo "$allReleaseInfo"|  grep -Eo '[0-9]{1,}.[0-9]{1,}.[0-9]{1,}'|uniq)
-
+	echo "===========> Generating DockerFiles <================"
 	travisEnv=
 	for version in "${versions[@]}"; do
 		minor=$(echo "$version"|cut -d '.' -f1|tr -d " ")
@@ -148,11 +188,11 @@ function main()
 
 		generate_dockerfiles_for_distros "$_PDNS_RELEASES_URL/$filename" "$version"
 
-
-
-
-
 	done
+	# updating links for
+	# 	-	major+minor versions
+	#	-	major versions
+	update_links
 }
 
 ############# main flow
