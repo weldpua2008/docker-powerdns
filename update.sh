@@ -4,7 +4,8 @@
 # author: Valeriy Soloviov <weldpua2008@gmail.com
 ######################################################
 set -e
-cd "$(dirname "$(readlink -f "$BASH_SOURCE")")"
+_ROOT_PATH="$(dirname "$(readlink -f "$BASH_SOURCE")")"
+cd "$_ROOT_PATH"
 ###### VARS
 declare -a _SUPPORT_PLATFORMS=('Debian=>jessie stretch wheezy' 'Ubuntu=>12.04 14.04 16.04')
 # path to templates of DockerFiles
@@ -13,7 +14,7 @@ _FILENAME_TMPL_DISTRO="%distro%-Dockerfile"
 _FILENAME_TMPL_DISTRO_VERSION="%distro%-%version%-Dockerfile"
 _PDNS_RELEASES_URL="https://downloads.powerdns.com/releases"
 _FILES_FOR_DockerIMG_PATH="files"
-
+_TRAVIS_DOCKERFILES=()
 versions=( "$@" )
 if [ ${#versions[@]} -eq 0 ]; then
 	versions=( */ )
@@ -80,6 +81,7 @@ function generate_dockerfiles_for_distros()
 						s!%%PDNS_FILENAME%%!'"$pdns_fileurl"'!;
 					' "$_docker_file_prefix/Dockerfile"
 					)
+					_TRAVIS_DOCKERFILES+=( "$_docker_file_prefix/Dockerfile" )
 					cp -v $_FILES_FOR_DockerIMG_PATH/* "$_docker_file_prefix"
 				fi
 		   done
@@ -108,7 +110,7 @@ function update_links()
 					cd "$__distro_wp"
 					for major in $(ls -D);do
 						cd $major || continue
-						local latest_alias="$major"
+						latest_alias="$major"
 #						for fullversion in $(ls -D|grep -Eo '^[0-9]{1,}.[0-9]{1,}.[0-9]{1,}$');do
 #							major=$(echo "$fullversion"|cut -d '.' -f1|tr -d " ")
 						for fullversion in $(ls -D|grep -Eo '^'$major'.[0-9]{1,}.[0-9]{1,}$');do
@@ -138,17 +140,18 @@ function update_links()
 									fi
 								done
 
-
+								if [ -L "$major.$minor" ];then
+									rm -f "$major.$minor"
+								fi
 								echo "Creating alias for $_distro/$_distro_version/$major/$major.$minor => $__revision_alias"
 								ln -s  "$__revision_alias" "$major.$minor"
 							fi
 
 						done
-#						echo "latest_alias $latest_alias"
 						if [ -d "$latest_alias" ];then
 							echo "Generating alias for $_distro/$_distro_version/$major/latest => $latest_alias"
-							rm -f "$_distro/$_distro_version/$major/latest" || true
-							ln -s "$latest_alias" latest
+							rm -f "latest" || true
+							ln -s "$latest_alias" "latest"
 						fi
 					done
 
@@ -156,6 +159,28 @@ function update_links()
 	       done
 	   count=$(( $count + 1 ))
 	done
+}
+
+# updates .travis.yml
+function update_travis_ci()
+{
+	echo "===========> Generating .travis.yml <================"
+	pwd
+	newTravisEnv=
+	for dockerfile in "${_TRAVIS_DOCKERFILES[@]}"; do
+		set -x
+		dir="${dockerfile%Dockerfile}"
+		dir="${dir%/}"
+		version=$(basename "$dir")
+		variant=$(echo "${dir%/*/*}"|tr '/' '-')
+		newTravisEnv+='\n  - VERSION='"$version VARIANT=$variant DockerFile_DIR=$dir"
+	done
+	set +x
+	travisEnv="$newTravisEnv$travisEnv"
+	travis="$(awk -v 'RS=\n\n' '$1 == "env:" { $0 = "env:'"$travisEnv"'" } { printf "%s%s", $0, RS }' .travis.yml)"
+	echo "$travis" > .travis.yml
+
+
 }
 
 function main()
@@ -193,6 +218,9 @@ function main()
 	# 	-	major+minor versions
 	#	-	major versions
 	update_links
+	cd "$_ROOT_PATH"
+
+	update_travis_ci
 }
 
 ############# main flow
