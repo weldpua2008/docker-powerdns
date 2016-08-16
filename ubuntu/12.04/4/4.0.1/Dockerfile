@@ -39,6 +39,7 @@ RUN set -xe && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/*
 
-#COPY docker-ext-* /usr/local/bin/
-
 EXPOSE 53 53/udp
+
+COPY entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]

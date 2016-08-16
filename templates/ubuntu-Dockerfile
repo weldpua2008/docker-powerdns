@@ -9,7 +9,7 @@ RUN set -xe && \
 	export BUILD_SRC="$PDNS_FILENAME" && \
 	export BUILD_DEP="g++ libboost-all-dev libtool make pkg-config libmysqlclient-dev libssl-dev" && \
 	export UNINSTABLE_BUILD_TOOLS="curl bzip2 ca-certificates" && \
-	apt-get install -y $BUILD_DEP  $UNINSTABLE_BUILD_TOOLS && \
+	apt-get install -y --force-yes $BUILD_DEP  $UNINSTABLE_BUILD_TOOLS && \
 	curl -fSL -o pdns.tar.bz2 "$BUILD_SRC" && \
 	export PDNS_BUILD_TMP="pdns-src" && \
 	mkdir -p $PDNS_BUILD_TMP && \
@@ -24,6 +24,9 @@ RUN set -xe && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/*
 
-#COPY docker-ext-* /usr/local/bin/
+
 
 EXPOSE 53 53/udp
+
+COPY entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]

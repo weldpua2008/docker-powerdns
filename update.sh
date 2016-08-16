@@ -83,6 +83,8 @@ function generate_dockerfiles_for_distros()
 					)
 					_TRAVIS_DOCKERFILES+=( "$_docker_file_prefix/Dockerfile" )
 					cp -v $_FILES_FOR_DockerIMG_PATH/* "$_docker_file_prefix"
+					# fixing permissions
+					chmod 755 "$_docker_file_prefix"/*.sh
 				fi
 		   done
 	   count=$(( $count + 1 ))
