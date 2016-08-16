@@ -23,8 +23,8 @@ RUN set -xe && \
 	rm -f pdns.tar.bz2 && \
 	cd $PDNS_BUILD_TMP && \
 	echo "fixing 12.04 issue" &&\
-	echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu precise main
-deb-src http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu precise main" > /etc/apt/sources.list.d/ubuntu-toolchain-r.list && \
+	echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu precise main" > /etc/apt/sources.list.d/ubuntu-toolchain-r.list && \
+	echo "deb-src http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu precise main" >> /etc/apt/sources.list.d/ubuntu-toolchain-r.list && \
 	gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv 1E9377A2BA9EF27F && \
 	apt-get update && \
 	apt-get -y --force-yes install gcc-4.7 g++-4.7 && \
