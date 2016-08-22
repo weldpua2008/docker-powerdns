@@ -12,6 +12,9 @@ declare -a _SUPPORT_PLATFORMS=('Debian=>jessie stretch wheezy' 'Ubuntu=>12.04 14
 _DCKRFILE_TMPL_DIR="templates"
 _FILENAME_TMPL_DISTRO="%distro%-Dockerfile"
 _FILENAME_TMPL_DISTRO_VERSION="%distro%-%version%-Dockerfile"
+_FILENAME_TMPL_DISTRO_VERSION_MINOR="%distro%-%version%-%minor%-Dockerfile"
+_FILENAME_TMPL_DISTRO_VERSION_MINORMAJOR="%distro%-%version%-%minor%.%major%-Dockerfile"
+
 _PDNS_RELEASES_URL="https://downloads.powerdns.com/releases"
 _FILES_FOR_DockerIMG_PATH="files"
 _TRAVIS_DOCKERFILES=()
