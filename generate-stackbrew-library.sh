@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
+declare -a ADDED_TAGs
+
 self="$(basename "$BASH_SOURCE")"
 cd "$(dirname "$(readlink -f "$BASH_SOURCE")")"
 
@@ -22,14 +24,55 @@ for real_file in `find $GlobalPWD/ -name "Dockerfile"`;do
 	if [ "x$fullVersion" = "x" ];then
 		continue
 	fi
-	TAGs="${fullVersion}"
-	echo
+	if [[ " ${ADDED_TAGs[@]} " =~ " ${fullVersion} " ]]; then
+
+		num2=2
+		z=$(echo  '([^/]+/){'$(($levels+$num2))'}[^/]+/?$')
+		directory=$(grep -oP "$z"  <<< "$real_file")
+		newfullVersion="${fullVersion}-$(echo "$directory"|cut -d '/' -f1,2|tr '/' '-')"
+#		continue
+		if [[ " ${ADDED_TAGs[@]} " =~ " ${newfullVersion} " ]]; then
+			unset num2
+		else
+			TAGs="${newfullVersion}"
+			ADDED_TAGs+=("${newfullVersion}")
+		fi
+	else
+		TAGs="${fullVersion}"
+		ADDED_TAGs+=("${fullVersion}")
+	fi
 #	echo "$fullVersion: ${url}@${commit}"
 	cd "$(dirname "$(dirname "$real_file")")"
 	for soft_link in `find -L  "$PWD/"  -xtype l`;do
 		if [ "$fullVersion" = $(echo "$(basename "$(readlink -f "$soft_link")")") ];then
 #			echo "$(basename "${soft_link}"): ${url}@${commit}"
-			TAGs="${TAGs}, $(basename "${soft_link}")"
+			mew_tag="$(basename "${soft_link}")"
+#			TAGs="${TAGs}, $(basename "${soft_link}")"
+
+				if [[ " ${ADDED_TAGs[@]} " =~ " ${mew_tag} " ]]; then
+					if [ "${mew_tag}" = "latest" ];then
+						continue
+					fi
+					num2=2
+					z=$(echo  '([^/]+/){'$(($levels+$num2))'}[^/]+/?$')
+					directory=$(grep -oP "$z"  <<< "$real_file")
+					newfullVersion="${mew_tag}-$(echo "$directory"|cut -d '/' -f1,2|tr '/' '-')"
+					if [[ " ${ADDED_TAGs[@]} " =~ " ${newfullVersion} " ]]; then
+						continue
+					else
+						ADDED_TAGs+=("${newfullVersion}")
+
+						TAGs="${TAGs}, ${newfullVersion}"
+					fi
+				else
+#					TAGs="${fullVersion}"
+
+					TAGs="${TAGs}, ${mew_tag}"
+
+					ADDED_TAGs+=("${mew_tag}")
+				fi
+
+
 		fi
 
 	done
@@ -38,6 +81,7 @@ num2=2
 z=$(echo  '([^/]+/){'$(($levels+$num2))'}[^/]+/?$')
 directory=$(grep -oP "$z"  <<< "$real_file")
 cat <<-EOE
+
 		Tags: ${TAGs}
 		Directory: $directory
 		GitCommit: ${commit}
