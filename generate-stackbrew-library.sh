@@ -12,7 +12,6 @@ cat <<-EOH
 
 Maintainers: Valeriy Solovyov <weldpua2008@gmail.com> (@weldpua2008)
 
-GitRepo: ${url}.git
 EOH
 
 
@@ -57,6 +56,7 @@ for real_file in `find $GlobalPWD/ -name "Dockerfile"`;do
 					z=$(echo  '([^/]+/){'$(($levels+$num2))'}[^/]+/?$')
 					directory=$(grep -oP "$z"  <<< "$real_file")
 					newfullVersion="${mew_tag}-$(echo "$directory"|cut -d '/' -f1,2|tr '/' '-')"
+#					continue
 					if [[ " ${ADDED_TAGs[@]} " =~ " ${newfullVersion} " ]]; then
 						continue
 					else
@@ -83,8 +83,10 @@ directory=$(grep -oP "$z"  <<< "$real_file")
 cat <<-EOE
 
 		Tags: ${TAGs}
-		Directory: $directory
+		GitRepo: ${url}.git
 		GitCommit: ${commit}
+		Directory: $(dirname "$directory")
+
 EOE
 
 #	echo "${fullVersion%.*}: ${url}@${commit}"
